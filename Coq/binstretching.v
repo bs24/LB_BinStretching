@@ -1,12 +1,13 @@
-Require Import Omega List Arith.
+Require Import Lia List Arith.
 Import Nat ListNotations.
 
 Scheme Equality for list.
-Hint Resolve leb_correct leb_complete beq_nat_true beq_nat_eq beq_nat_refl.
+Hint Resolve leb_correct leb_complete beq_nat_true beq_nat_eq beq_nat_refl : export core.
 
 Require   MSets.
 Require Import Coq.Structures.Orders.
 Require Import NArith.
+Require Import PArith.Pnat.
 
 Open Scope bool_scope.
 
@@ -45,9 +46,9 @@ Qed.
 
 
 Ltac n_lt H := let c:= fresh H in
-inversion H as [c]; rewrite  nat_of_Ncompare in c; rewrite <- nat_compare_lt in c; try omega.
+inversion H as [c]; rewrite  nat_of_Ncompare in c; rewrite <- nat_compare_lt in c; try lia.
 Hint Rewrite N.eqb_eq.
-Hint Resolve N.eqb_eq.
+Hint Resolve N.eqb_eq : export core.
 
 
 Lemma Listlt_neq: forall a b, Listlt a b -> a <> b.
@@ -315,7 +316,7 @@ intros. destruct (lt_eq_lt_dec a b). destruct s.
   assert (a<=b). auto with arith.
   apply le_plus_minus in H.
   revert H; generalize (b-a); intros.
-  destruct n. omega.
+  destruct n. lia.
   subst. rewrite <- plus_n_Sm.
   rewrite plus_comm.
   symmetry; apply Nnat_order_plus.
@@ -326,13 +327,13 @@ intros. destruct (lt_eq_lt_dec a b). destruct s.
 + subst.
   transitivity false.
   - apply Bool.not_true_iff_false; intro.  
-    apply ltb_lt in H; omega.
+    apply ltb_lt in H; lia.
   - symmetry; apply Bool.not_true_iff_false; intro.  
     assert ((N.of_nat b <? N.of_nat a)%N = true).
     * assert (b<=a). auto with arith.
       apply le_plus_minus in H0.
       revert H0; generalize (a-b); intros.
-      destruct n. omega.
+      destruct n. lia.
       subst. rewrite <- plus_n_Sm.
       rewrite plus_comm.
       apply Nnat_order_plus.
@@ -361,7 +362,7 @@ destruct (lt_eq_lt_dec a b). destruct s.
   symmetry; apply N.leb_refl.
 + transitivity false.
   - apply Bool.not_true_iff_false; intro.  
-    apply leb_le in H; omega.
+    apply leb_le in H; lia.
   - symmetry; apply Bool.not_true_iff_false; intro.
     assert (b<=a). auto with arith.
     assert ((N.of_nat b <? N.of_nat a)%N = true).
@@ -938,13 +939,13 @@ assert (length s = length (sa (n::s') a)).
       rewrite count_occ_cons_eq in H; auto.
     eapply count_occ_In.
     rewrite <- H.
-    rewrite count_occ_cons_eq; omega.
+    rewrite count_occ_cons_eq; lia.
   rewrite <- sa_countocc_neq; auto.
     specialize (H x).
     rewrite count_occ_cons_neq in H; auto.
   eapply count_occ_In.
   rewrite <- H.
-  rewrite count_occ_cons_eq; omega.
+  rewrite count_occ_cons_eq; lia.
 }
 
 simpl in H0.
@@ -954,7 +955,7 @@ symmetry; apply sa_length.
 eapply count_occ_In.
 erewrite <- count_occ_cons_neq.
   rewrite <- H.
-  rewrite count_occ_cons_eq; omega.
+  rewrite count_occ_cons_eq; lia.
 intuition.
 Qed.
 
@@ -1029,13 +1030,13 @@ Qed.
 Lemma AddToBin_length:  forall s b e, b<m -> (length s) <= m -> length (AddToBin s e b) <= m .
 Proof.
 intros s; revert m Posm.
-induction s; intros;simpl. omega.
+induction s; intros;simpl. lia.
 simpl in H0.
 destruct b; simpl; auto.
 destruct m; auto.
-  omega.
+  lia.
 apply le_n_S.
-apply IHs; omega.
+apply IHs; lia.
 Qed.
 
 Lemma AddToBin_countocc_one: forall s  b e a,
@@ -1067,7 +1068,7 @@ destruct (Nat.eq_dec (a) (a0)); intuition.
 rewrite IHs; auto.
 assert(count_occ Nat.eq_dec s a0 >0).
   simpl in H; apply count_occ_In; eapply nth_error_In; eauto.
-omega.
+lia.
 Qed.
 
 Lemma AddToBin_countocc_neq: forall s  b e a x,
@@ -1090,7 +1091,7 @@ intro; induction s; intros.
 Proof.
 
 apply nth_error_Some in H.
-  simpl in H; omega.
+  simpl in H; lia.
 simpl; destruct b.
   assert (a+0=a); auto.
   rewrite H0; auto.
@@ -1121,7 +1122,7 @@ destruct b.
 {
   induction s'.
     simpl in H; specialize (H a).
-    destruct (Nat.eq_dec a a); omega.
+    destruct (Nat.eq_dec a a); lia.
   destruct (Nat.eq_dec a a0).
   {
     subst; exists 0.
@@ -1139,19 +1140,19 @@ destruct b.
     simpl in H; specialize (H a).
     destruct (Nat.eq_dec a a);
     destruct (Nat.eq_dec a0 a);
-    try erewrite <- H; try omega.  
+    try erewrite <- H; try lia.  
 
   destruct H1.
   exists (S x); split.
     assert (Some a <> None) by try congruence.
     rewrite <- H1 in H2.
-    apply nth_error_Some in H2; simpl; omega.
+    apply nth_error_Some in H2; simpl; lia.
 
   intros; simpl.
   destruct (Nat.eq_dec (a+e) x0).
   {
     destruct (Nat.eq_dec a0 x0); subst.
-      rewrite <- count_occ_cons_neq with (x:=a); try omega.
+      rewrite <- count_occ_cons_neq with (x:=a); try lia.
       rewrite H.
       apply eq_S.
       rewrite count_occ_cons_eq; auto.
@@ -1190,13 +1191,13 @@ destruct b.
   (* a0 <> x0 *)
   destruct (Nat.eq_dec x0 a); subst.
   {
-    assert (e>0) by omega.
+    assert (e>0) by lia.
     erewrite AddToBin_countocc_minus; intuition.
     apply eq_add_S.
     erewrite <- count_occ_cons_eq; try trivial.
     rewrite H.
     erewrite count_occ_cons_neq; intuition.
-    assert (count_occ Nat.eq_dec s' a >0); try omega.
+    assert (count_occ Nat.eq_dec s' a >0); try lia.
       apply count_occ_In; eapply nth_error_In; eauto.
   }
   erewrite AddToBin_countocc_neq.
@@ -1210,7 +1211,7 @@ destruct b.
 
 destruct s'.
   simpl in H; specialize (H a).
-  destruct (Nat.eq_dec); omega.
+  destruct (Nat.eq_dec); lia.
 
 simpl in H0; destruct (Nat.eq_dec a n); subst.
 {
@@ -1253,7 +1254,7 @@ assert (forall x : nat, count_occ Nat.eq_dec s x = count_occ Nat.eq_dec (sa (n::
         rewrite <- sa_countocc_neq; auto.
         eapply count_occ_In.
         erewrite <- count_occ_cons_neq with (x:=x); auto.
-          rewrite <- H. simpl. destruct (Nat.eq_dec); omega.
+          rewrite <- H. simpl. destruct (Nat.eq_dec); lia.
   }
 
   destruct (Nat.eq_dec a x); subst.
@@ -1266,7 +1267,7 @@ assert (forall x : nat, count_occ Nat.eq_dec s x = count_occ Nat.eq_dec (sa (n::
       rewrite <- sa_countocc_eq; auto.
       eapply count_occ_In.
       erewrite <- count_occ_cons_neq.
-      rewrite <- H. simpl. destruct (Nat.eq_dec); omega.
+      rewrite <- H. simpl. destruct (Nat.eq_dec); lia.
     auto.
   }
 
@@ -1277,7 +1278,7 @@ assert (forall x : nat, count_occ Nat.eq_dec s x = count_occ Nat.eq_dec (sa (n::
     rewrite <- sa_countocc_neq; auto.
     eapply count_occ_In.
     erewrite <- count_occ_cons_neq.
-    rewrite <- H. simpl. destruct (Nat.eq_dec); omega.
+    rewrite <- H. simpl. destruct (Nat.eq_dec); lia.
   all: auto.
 }
 
@@ -1300,14 +1301,14 @@ revert H1; induction x; intros.
       rewrite <- sa_countocc_eq; auto;
       eapply count_occ_In;
       erewrite <- count_occ_cons_neq.
-       1,3: rewrite <- H; simpl; destruct (Nat.eq_dec); omega.
+       1,3: rewrite <- H; simpl; destruct (Nat.eq_dec); lia.
        all: intuition.
   }
 
   rewrite <- sa_countocc_neq; auto.
   eapply count_occ_In.
   erewrite <- count_occ_cons_neq.
-    rewrite <- H; simpl; destruct (Nat.eq_dec); omega.
+    rewrite <- H; simpl; destruct (Nat.eq_dec); lia.
     intuition.
 }
 
@@ -1316,7 +1317,7 @@ revert H1; induction x; intros.
 
 clear IHx.
 assert (nth_error s b <> None).
-  apply nth_error_Some; omega.
+  apply nth_error_Some; lia.
 assert (exists c, nth_error s b = Some c).
   destruct (nth_error s b); auto. 
   exists n1; auto. destruct H3; auto.
@@ -1339,7 +1340,7 @@ split.
 intros.
 destruct (Nat.eq_dec x0 x2); destruct (Nat.eq_dec (x0+e) x2); subst.
 
-  assert (e=0);subst. destruct e; auto; omega.
+  assert (e=0);subst. destruct e; auto; lia.
   repeat rewrite AddToBin_countocc_0. 
     auto. congruence. simpl; congruence.
 
@@ -1367,7 +1368,7 @@ destruct eq_dec; simpl.
 apply in_inv in H.
 destruct H; auto.
 eapply IHl in H.
-omega.
+lia.
 Qed.
 
 Lemma Countocc_binsum: forall l l', 
@@ -1410,7 +1411,7 @@ intro; induction l.
   simpl; auto.
 simpl.
 apply Nat.le_trans with (BinSum a + length l * MaxBinSum l).
-  induction a; simpl; omega.
+  induction a; simpl; lia.
 assert (BinSum a <= max (BinSum a) (MaxBinSum l)).
 apply Max.le_max_l.
 assert (MaxBinSum l <= max (BinSum a) (MaxBinSum l)).
@@ -1450,7 +1451,7 @@ intro; induction X; intros.
   apply H2 in Posm.
   apply IHX in Posm.
   simpl in Posm.
-  omega.
+  lia.
 }
 Qed.
 
@@ -1469,7 +1470,7 @@ apply H3 in H6.
 eapply IHX; auto.
 simpl.
 apply OnlineInfeasible_length in H0.
-omega.
+lia.
 Qed.
 
 
@@ -1497,7 +1498,7 @@ intros X; induction X; intros.
 inversion H0.
 {
   apply Overflow; auto.
-    assert (MaxBinValue s = MaxBinValue s'); try omega.
+    assert (MaxBinValue s = MaxBinValue s'); try lia.
       apply MaxBinValue_order; apply Countocc_sound; auto.
 }
 
@@ -1532,7 +1533,7 @@ destruct (le_lt_dec  (length s) b).
 
 eapply AddToBin_countocc_in with s s' b in H; auto.
 do 2 destruct H.
-eapply IHX; [ eauto | apply H3; omega ].
+eapply IHX; [ eauto | apply H3; lia ].
 Qed.
 
 
@@ -1964,7 +1965,7 @@ apply tree_forestN_mutind; intros.
   assert (nat_of_N (N.pos p) = Pos.to_nat p); auto.
   pose proof (Pos2Nat.is_pos p).
 
-  simpl; simpl in H0; destruct (Pos.to_nat p); try omega;
+  simpl; simpl in H0; destruct (Pos.to_nat p); try lia;
        apply Bool.andb_true_eq in H0; destruct H0; rewrite <- H1.
   symmetry; apply Bool.andb_true_iff; split.
   apply forallb_forall; intros. 
@@ -2147,7 +2148,7 @@ destruct X.
   all: eapply Deadend; auto; exists n; simpl; intros.
   all: inversion H0; apply Bool.andb_true_eq in H5; destruct H5; symmetry in H4;
        eapply forallb_forall in H4.
-  2,4: apply in_seq; split; [omega | eapply H3].
+  2: apply in_seq; split; [lia | eapply H3].
   apply IH; intuition; inversion H6.
 }
 {
@@ -2332,7 +2333,7 @@ exists (GetState x); intros.
 apply Iszero_sound in H0;
 simpl; intuition; eauto.
 eapply OnlineInfeasible_equiv; simpl.
-  rewrite <- minus_n_O; omega.
+  rewrite <- minus_n_O; lia.
 eapply CheckRecord_OI. 
   symmetry. rewrite H. eapply surjective_pairing.
   simpl. intuition.
@@ -2381,7 +2382,7 @@ eapply CheckRecord_OI with (R0:=[]).
 Qed.
 
 
-(* Result used in the research paper *)
+(* Results used in the research paper *)
 Theorem OI_length: forall X l St, OnlineInfeasible_simpl X l St -> (BinSum l) <= m*g.
 Proof.
 intros.
@@ -2389,6 +2390,19 @@ eapply OnlineInfeasible_length.
 apply OnlineInfeasible_rev.
 eauto. 
 Qed.
+
+Lemma OI_Succ: forall X l St, OnlineInfeasible_simpl X l St -> OnlineInfeasible_simpl (S X) l St.
+Proof.
+induction X; intros.
++ inversion H. apply Overflow_simpl; auto.
++ inversion H. apply Overflow_simpl; auto.
+  apply Deadend_simpl; auto.
+  destruct H2; exists x.
+  intros. apply IHX.
+  auto.
+Qed.
+
+
 
 End OnlineBinStretching.
 

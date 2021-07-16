@@ -5,7 +5,7 @@ This goal of this repository is to certify results of the type `Lower_bound m t 
 
 ## Package dependencies (on a Linux distribution)
 
-- coq
+- coq (tested with version 8.11.0)
 - xz-utils
 - g++
 
