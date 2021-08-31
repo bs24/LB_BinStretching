@@ -206,12 +206,12 @@ end.
 
 
 (* checks that all elements of l are contained in P *) 
-Definition CompletePacking (l: list nat) (P: BinsExtended):= forall e, 
+Definition SequencePacked (l: list nat) (P: BinsExtended):= forall e, 
 count_occ Nat.eq_dec l e <= count_occ Nat.eq_dec (concat P) e.
 
 (* checks the validity of a packing: completeness, number of bins, height *)
-Definition SolutionPacking (l:list nat) (P: BinsExtended)  :=
-CompletePacking l P /\  length P = m /\ (MaxBinSum P <= g).
+Definition GuaranteePacking (l:list nat) (P: BinsExtended)  :=
+SequencePacked l P /\  length P = m /\ (MaxBinSum P <= g).
 
 (* checks that the list contains only zeros *)
 Definition Iszero l := (forall e, In e l -> e=0) /\ length l <= m.
@@ -230,7 +230,7 @@ Definition Iszero l := (forall e, In e l -> e=0) /\ length l <= m.
 Inductive OnlineInfeasible_simpl: nat -> list nat -> BinLoads -> Prop :=
 | Overflow_simpl X l St: (* one bin is too high and a valid packing exists *)
             (t <= MaxBinValue St)
-         -> (exists P, SolutionPacking l P)
+         -> (exists P, GuaranteePacking l P)
          -> OnlineInfeasible_simpl X l St
 
 | Deadend_simpl X l St: (* if we add the element e to any bin, we get an infeasible state *)
@@ -253,11 +253,11 @@ Definition Lower_bound := exists s, Iszero s  /\  OnlineInfeasible_simpl (m*g+2)
 Inductive OnlineInfeasible: nat -> list nat -> BinLoads -> Prop :=
 | Overflow X l St: 
             t <= MaxBinValue St
-         -> (exists P, SolutionPacking l P)
+         -> (exists P, GuaranteePacking l P)
          -> OnlineInfeasible X l St
 
 | NoMorePieces l St: 
-            (exists P, SolutionPacking l P)
+            (exists P, GuaranteePacking l P)
          -> OnlineInfeasible 0 l St
 
 | Deadend X l St:
@@ -572,19 +572,19 @@ Qed.
 Hint Resolve BubbleSortN_eq : Nnat.
 
 
-(* verify the CompletePacking property *)
-Fixpoint CompletePacking_b (l: list nat) (P: list nat):= match l with
+(* verify the SequencePacked property *)
+Fixpoint SequencePacked_b (l: list nat) (P: list nat):= match l with
 | nil  => true
-| x::s => (count_occ Nat.eq_dec l x <=? count_occ Nat.eq_dec (P) x) &&& CompletePacking_b s P
+| x::s => (count_occ Nat.eq_dec l x <=? count_occ Nat.eq_dec (P) x) &&& SequencePacked_b s P
 end.
 
-Fixpoint CompletePacking_bN (l: list elt) (P: list (elt)):= match l with
+Fixpoint SequencePacked_bN (l: list elt) (P: list (elt)):= match l with
 | nil  => true
-| x::s => (count_occ N.eq_dec l x <=? count_occ N.eq_dec (P) x) &&& CompletePacking_bN s P
+| x::s => (count_occ N.eq_dec l x <=? count_occ N.eq_dec (P) x) &&& SequencePacked_bN s P
 end.
 
 
-Lemma CompletePacking_b_eq : forall l P, CompletePacking_bN l P = true -> CompletePacking_b (List_ofN l) (List_ofN P) = true.
+Lemma SequencePacked_b_eq : forall l P, SequencePacked_bN l P = true -> SequencePacked_b (List_ofN l) (List_ofN P) = true.
 Proof.
 induction l; intros.
   simpl; auto.
@@ -602,21 +602,21 @@ Qed.
 Definition Nt := Eval vm_compute in N_of_nat t.
 Definition Ng := Eval vm_compute in N_of_nat g.
 
-(* verify the SolutionPacking property *)
-Definition SolutionPacking_b  (l:list nat) (P: BinsExtended)  :=
-(CompletePacking_b l (concat P)) &&&  (length P =? m) &&& (MaxBinSum P <=? g).
+(* verify the GuaranteePacking property *)
+Definition GuaranteePacking_b  (l:list nat) (P: BinsExtended)  :=
+(SequencePacked_b l (concat P)) &&&  (length P =? m) &&& (MaxBinSum P <=? g).
 
-Definition SolutionPacking_bN  (l:list elt) (P: list (list elt))  :=
-(CompletePacking_bN l (concat P)) &&&  (length P =? m) &&& (MaxBinSumN P <=? Ng)%N.
+Definition GuaranteePacking_bN  (l:list elt) (P: list (list elt))  :=
+(SequencePacked_bN l (concat P)) &&&  (length P =? m) &&& (MaxBinSumN P <=? Ng)%N.
 
 
-Lemma SolutionPacking_b_eq : forall l P, SolutionPacking_bN l P = true -> SolutionPacking_b (List_ofN l) (LList_ofN P) = true.
+Lemma GuaranteePacking_b_eq : forall l P, GuaranteePacking_bN l P = true -> GuaranteePacking_b (List_ofN l) (LList_ofN P) = true.
 Proof.
 intros.
 symmetry in H; apply Bool.andb_true_eq in H; destruct H.
 apply Bool.andb_true_eq in H; destruct H.
 apply Bool.andb_true_iff; split; try apply Bool.andb_true_iff; try split.
-+ rewrite ConcatN_eq; apply CompletePacking_b_eq; auto.
++ rewrite ConcatN_eq; apply SequencePacked_b_eq; auto.
 + unfold LList_ofN. rewrite map_length; auto.
 + rewrite Nnat_order. autorewrite with Nnat; auto.
 Qed.
@@ -681,9 +681,9 @@ Qed.
 
 (** ** Lemmas related to Packings ***)
 
-Lemma CompletePackBool: forall l P, true = CompletePacking_b l (concat P) <-> CompletePacking l P.
+Lemma CompletePackBool: forall l P, true = SequencePacked_b l (concat P) <-> SequencePacked l P.
 Proof.
-intros; induction l; unfold CompletePacking;split; intros;auto.
+intros; induction l; unfold SequencePacked;split; intros;auto.
 {
   destruct (Nat.eq_decidable a e).
 
@@ -710,19 +710,19 @@ destruct (Nat.eq_dec a e0).
     rewrite count_occ_cons_neq; auto.
 Qed.
 
-Lemma SolPackbool: forall l P, true = SolutionPacking_b l P  <-> SolutionPacking l P.
+Lemma SolPackbool: forall l P, true = GuaranteePacking_b l P  <-> GuaranteePacking l P.
 Proof.
 
 split.
 + intros.
-  unfold SolutionPacking_b in H.
+  unfold GuaranteePacking_b in H.
   apply Bool.andb_true_eq in H; destruct H.
   apply Bool.andb_true_eq in H; destruct H.
   split; intros.
     apply CompletePackBool;auto.
   split; auto.
 + intros.
-  unfold SolutionPacking_b; symmetry.
+  unfold GuaranteePacking_b; symmetry.
   destruct H. destruct H0.
   apply Bool.andb_true_iff; split; auto.
     apply Bool.andb_true_iff; split.
@@ -732,7 +732,7 @@ Qed.
 
 Lemma SolPackCountocc: forall l l' P, 
 (forall x, count_occ Nat.eq_dec l x  = count_occ Nat.eq_dec l' x) ->
-SolutionPacking l P -> SolutionPacking l' P .
+GuaranteePacking l P -> GuaranteePacking l' P .
 Proof.
 intros.
 destruct H0. destruct H1.
@@ -744,14 +744,14 @@ Qed.
 
 Lemma SolPackCountocc_ex: forall l l', 
 (forall x, count_occ Nat.eq_dec l x  = count_occ Nat.eq_dec l' x) ->
-(exists P, SolutionPacking l P) -> (exists P, SolutionPacking l' P ).
+(exists P, GuaranteePacking l P) -> (exists P, GuaranteePacking l' P ).
 Proof.
 intros. destruct H0. exists x. eapply SolPackCountocc; auto.
 Qed.
 
 
 
-Lemma Packing_included: forall l e P, SolutionPacking (e::l) P ->  SolutionPacking l P.
+Lemma Packing_included: forall l e P, GuaranteePacking (e::l) P ->  GuaranteePacking l P.
 Proof.
 intros l.
 induction l; intros. 
@@ -766,7 +766,7 @@ destruct (Nat.eq_decidable e e0).
 erewrite <- count_occ_cons_neq; eauto.
 Qed.
 
-Lemma Packing_concat: forall a b P, SolutionPacking (a++b) P -> SolutionPacking b P.
+Lemma Packing_concat: forall a b P, GuaranteePacking (a++b) P -> GuaranteePacking b P.
 Proof.
 induction a; intros.
   auto.
@@ -787,11 +787,11 @@ simpl.
  Qed.
 
 
-Lemma Packing_exch: forall a x b P, SolutionPacking (x::a++b) P -> SolutionPacking (a++x::b) P.
+Lemma Packing_exch: forall a x b P, GuaranteePacking (x::a++b) P -> GuaranteePacking (a++x::b) P.
 Proof.
-intros; unfold SolutionPacking in *.
+intros; unfold GuaranteePacking in *.
 repeat split; intuition.
-unfold CompletePacking in *; intros.
+unfold SequencePacked in *; intros.
 rewrite <- Countocc_exch.
 auto.
 Qed.
@@ -1421,7 +1421,7 @@ eapply plus_le_compat; eauto.
 Qed.
 
 
-Lemma SolPack_BinSum: forall l P, SolutionPacking l P -> BinSum l <= m* g.
+Lemma SolPack_BinSum: forall l P, GuaranteePacking l P -> BinSum l <= m* g.
 Proof.
 
 intros. destruct H. destruct H0.
@@ -1774,7 +1774,7 @@ end.
 
 Lemma CheckEndTree_OI: (forall el l St, (true = CheckEndTree St el ) 
             -> (length St <= m) 
-            -> (exists P, SolutionPacking (el++l) P)
+            -> (exists P, GuaranteePacking (el++l) P)
             -> forall X, OnlineInfeasible X l St).
 Proof using All.
 induction el; intros.
@@ -1862,7 +1862,7 @@ Fixpoint CheckTree (R: M.t)  (l:list nat)  (T:tree) := match T with
 | nodeL _ [] _ => false
 
 | nodeL St el P => 
-  CheckEndTree St el &&& SolutionPacking_b  (el++l) P
+  CheckEndTree St el &&& GuaranteePacking_b  (el++l) P
 
 | nodeI St (S e) F => let l' := Insert_sorted (S e) l in
   (forallb (fun b => let St' :=  BubbleSort (AddToBin St (S e) b) in
@@ -1895,7 +1895,7 @@ Fixpoint CheckTreeN (R: M.t)  (l:list elt)  (T:treeN) := match T with
 | lf _ [] _ => false
 
 | lf St el P => 
-  CheckEndTreeN St (el) &&& SolutionPacking_bN  (el++l) P
+  CheckEndTreeN St (el) &&& GuaranteePacking_bN  (el++l) P
 
 | nd St (N.pos e) F =>  let l' := Insert_sortedN (N.pos e) l in
   (forallb
@@ -1994,7 +1994,7 @@ apply tree_forestN_mutind; intros.
      simpl; auto.
   simpl; simpl in H.
   apply Bool.andb_true_eq in H; destruct H.
-  symmetry in H0; eapply SolutionPacking_b_eq in H0.
+  symmetry in H0; eapply GuaranteePacking_b_eq in H0.
   symmetry in H; apply CheckEndTree_eq in H.
   symmetry; apply Bool.andb_true_iff.
   simpl in H0; rewrite List_concat in H0.
@@ -2042,13 +2042,13 @@ end.
 (* if CheckTree returns true and the records are consistent, there exists a packing containing the new element *)
 Lemma CheckTreeForest_Packing:
 (forall T l R, true = CheckTree R l T
-            -> (forall St l', M.mem (List_toN St, List_toN l') R = true  -> exists P, SolutionPacking l' P)
-            -> exists P, SolutionPacking ((GetElt T)::l) P )
+            -> (forall St l', M.mem (List_toN St, List_toN l') R = true  -> exists P, GuaranteePacking l' P)
+            -> exists P, GuaranteePacking ((GetElt T)::l) P )
 /\
 (forall F l R, true = CheckForest R l F
             -> F <> leaf 
-            -> (forall St l', M.mem (List_toN St,List_toN l') R = true  -> exists P, SolutionPacking l' P)
-            -> exists P, SolutionPacking l P ).
+            -> (forall St l', M.mem (List_toN St,List_toN l') R = true  -> exists P, GuaranteePacking l' P)
+            -> exists P, GuaranteePacking l P ).
 Proof.
 apply tree_forest_mutind; intros; try congruence.
 {
